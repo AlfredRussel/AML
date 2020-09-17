@@ -1,0 +1,47 @@
+---
+title: "Sample"
+author: "Alfred"
+date: "April 14, 2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r}
+library(mlbench)
+library(caret)
+data(PimaIndiansDiabetes)
+levels(PimaIndiansDiabetes$diabetes)
+hist(PimaIndiansDiabetes$glucose)
+typeof(PimaIndiansDiabetes$pressure)
+colMeans(is.na(PimaIndiansDiabetes))
+```
+
+```{r}
+set.seed(2)
+intrain <- createDataPartition(y = PimaIndiansDiabetes$diabetes, p= 0.7, list = FALSE)
+training <- PimaIndiansDiabetes[intrain,]
+testing <- PimaIndiansDiabetes[-intrain,]
+
+```
+
+```{r}
+rf.model<-train(diabetes~.,data=training,method='rf')
+rf.model
+
+Grid_Search <- expand.grid(.mtry=c(2,3,8))
+```
+
+```{r}
+rf.model2<-train(diabetes~.,
+                 data=training,
+                 method='rf',
+                 tuneGrid=Grid_Search)
+rf.model2
+probs <-predict(rf.model2,testing,type="prob")
+head(probs)
+
+pred_class <-predict(rf.model2,testing,type="raw")
+head(pred_class)
+```
+
