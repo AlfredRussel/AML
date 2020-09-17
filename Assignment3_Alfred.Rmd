@@ -1,0 +1,26 @@
+---
+title: "Assignment3_Alfred"
+author: "Alfred"
+date: "4/18/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r}
+library(dplyr)
+library(knitr)
+# groceries_v2 <- readr::read_csv('groceries_v2.csv')
+groceries_v2 <- read.csv('groceries_v2.csv')
+df <- select(groceries_v2, c(1))
+colnames(df) <- c("itemList")
+write.csv(df,"ItemList.csv", quote = FALSE, row.names = TRUE)
+```
+
+```{r}
+library(arules)
+txn = read.transactions(file="ItemList.csv", rm.duplicates= FALSE, format="basket",sep=",",cols=1);
+basket_rules <- apriori(txn,parameter = list(minlen=2,sup = 0.01, conf = 0.5, target="rules"))
+inspect(basket_rules)
+```
+
