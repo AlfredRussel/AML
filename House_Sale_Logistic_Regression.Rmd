@@ -1,0 +1,134 @@
+---
+title: "House Sale - Logistic Regression,SVM"
+output: html_notebook
+---
+
+
+```{r}
+df<-House_Price
+head(df)
+```
+Handling Outliers
+```{r}
+summary(df)
+```
+
+```{r}
+uv <- quantile(df$n_hot_rooms, 0.99) * 3
+max(df$n_hot_rooms)
+df$n_hot_rooms[df$n_hot_rooms > uv] <- uv
+```
+
+```{r}
+lv <- quantile(df$rainfall, 0.01) * 0.3
+min(df$rainfall)
+df$rainfall[df$rainfall < lv] <- lv
+```
+```{r}
+summary(df)
+```
+#Handling Missing Values
+```{r}
+df$n_hos_beds[is.na(df$n_hos_beds)] <- mean(df$n_hos_beds,na.rm = TRUE)
+summary(df$n_hos_beds)
+```
+#Categorical Features
+```{r}
+#install.packages('dummies')
+library(dummies)
+```
+
+```{r}
+df <- dummy.data.frame(df)
+head(df)
+```
+```{r}
+df <- df[-c(12,18)]
+head(df)
+```
+
+```{r}
+avg_dist <- (House_Price$dist1+House_Price$dist2+House_Price$dist3+House_Price$dist4)/4
+df$avg_dist <- avg_dist
+```
+
+```{r}
+df <- df[-c(12,18)]
+head(df)
+```
+
+```{r}
+df <- df[-c(6:9)]
+head(df)
+```
+
+```{r}
+#install.packages("ggcorrplot")
+library(ggcorrplot)
+M <- cor(df)
+#corrplot(M, method = "number")
+#ggcorrplot(M)
+ggcorrplot(M,hc.order = TRUE,lab = TRUE)
+```
+
+```{r}
+round(cor(df),2)
+cor(df$air_qual,df$parks)
+```
+
+```{r}
+df <- df[-c(15)]
+head(df)
+```
+
+#Test Train Split
+```{r}
+#install.packages('caTools')
+library(caTools)
+set.seed(0)
+split = sample.split(df,SplitRatio = 0.8)
+training = subset(df, split == TRUE)
+test = subset(df, split == FALSE)
+```
+#Logistic Regression
+```{r}
+trial_LR.fit <- glm(Sold~., data = training, family = binomial)
+summary(trial_LR.fit)
+```
+
+```{r}
+test_LR.probs = predict(trial_LR.fit,test, type='response')
+LR_predict_bin <- ifelse(test_LR.probs > 0.5,1,0)
+cm_LR <- table(LR_predict_bin,test$Sold)
+accuracy <- (sum(diag(cm_LR))/sum(cm_LR))
+cm_LR
+accuracy
+```
+#Support Vector Machine
+```{r}
+#install.packages('e1071')
+library(e1071)
+train_svm = svm(Sold ~ .,data = training, kernel = "linear",cost=1,scale = FALSE)
+summary(trial_LR.fit)
+svm_predict <- predict(train_svm,newdata = test,type="response")
+svm_predict_bin <- ifelse(svm_predict > 0.5,1,0)
+cm_svm <- table(svm_predict_bin,test$Sold) 
+svm_accuracy <- (sum(diag(cm_svm))/sum(cm_svm))
+cm_svm
+svm_accuracy
+```
+#ROC Curves
+```{r}
+#install.packages('pROC')
+library(pROC)
+par(pty="s") 
+lrROC <- roc(test$Sold ~ test_LR.probs,plot=TRUE,print.auc=TRUE,col="green",lwd =4,legacy.axes=TRUE,main="ROC Curves") #Setting levels: control = 0, case = 1
+#Setting direction: controls < cases
+svmROC <- roc(test$Sold ~ svm_predict,plot=TRUE,print.auc=TRUE,col="blue",lwd = 4,print.auc.y=0.4,legacy.axes=TRUE,add = TRUE)
+#Setting levels: control = 0, case = 1 
+#Setting direction: controls < cases
+legend("bottomright",legend=c("Logistic Regression","SVM"),col=c("green","blue"),lwd=4)
+```
+
+
+
